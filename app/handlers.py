@@ -718,6 +718,8 @@ async def cmd_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
             str(ROOT_DIR),
             "pull",
             "--ff-only",
+            "origin",
+            "main",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
         )
