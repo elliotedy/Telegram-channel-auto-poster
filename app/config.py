@@ -11,7 +11,10 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from dotenv import load_dotenv
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(ROOT_DIR / ".env")
+# The project .env must win over inherited shell variables. A leftover global
+# TELEGRAM_BOT_TOKEN (for example from another bot project) would otherwise
+# hijack this bot without any visible warning.
+load_dotenv(ROOT_DIR / ".env", override=True)
 
 
 def _parse_admin_ids(raw: str) -> frozenset[int]:
@@ -69,6 +72,19 @@ def _parse_media_dirs(raw: str | None) -> tuple[str, ...]:
     return tuple(part for part in parts if part)
 
 
+def _parse_host_port(raw: str, env_name: str) -> tuple[str, int]:
+    host, separator, port = raw.strip().rpartition(":")
+    if not separator or not host:
+        raise RuntimeError(f"{env_name} must look like host:port, got {raw!r}.")
+    try:
+        port_number = int(port)
+    except ValueError as exc:
+        raise RuntimeError(f"{env_name} has an invalid port: {port!r}.") from exc
+    if not 1 <= port_number <= 65535:
+        raise RuntimeError(f"{env_name} port must be between 1 and 65535.")
+    return host, port_number
+
+
 @dataclass(frozen=True)
 class Config:
     bot_token: str
@@ -84,6 +100,12 @@ class Config:
     import_recursive: bool = True
     import_filename_caption: bool = False
     max_upload_mb: float = 49.0
+    telegram_proxy: str | None = None
+    telegram_sni_relay: bool = False
+    telegram_relay_host: str = "127.0.0.1"
+    telegram_relay_port: int = 8443
+    telegram_relay_upstream_host: str = "149.154.166.110"
+    telegram_relay_upstream_port: int = 443
 
     @classmethod
     def from_env(cls) -> Config:
@@ -112,6 +134,12 @@ class Config:
         if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
             log_level = "INFO"
 
+        telegram_proxy = (os.getenv("TELEGRAM_PROXY") or "").strip() or None
+        relay_upstream_host, relay_upstream_port = _parse_host_port(
+            (os.getenv("TELEGRAM_RELAY_UPSTREAM") or "149.154.166.110:443").strip(),
+            "TELEGRAM_RELAY_UPSTREAM",
+        )
+
         return cls(
             bot_token=token,
             admin_ids=admin_ids,
@@ -126,4 +154,10 @@ class Config:
             import_recursive=_env_bool("IMPORT_RECURSIVE", True),
             import_filename_caption=_env_bool("IMPORT_FILENAME_CAPTION", False),
             max_upload_mb=_env_float("MAX_UPLOAD_MB", 49.0, 1.0, 2000.0),
+            telegram_proxy=telegram_proxy,
+            telegram_sni_relay=_env_bool("TELEGRAM_SNI_RELAY", False),
+            telegram_relay_host=(os.getenv("TELEGRAM_RELAY_HOST") or "127.0.0.1").strip(),
+            telegram_relay_port=_env_int("TELEGRAM_RELAY_PORT", 8443, 1, 65_535),
+            telegram_relay_upstream_host=relay_upstream_host,
+            telegram_relay_upstream_port=relay_upstream_port,
         )

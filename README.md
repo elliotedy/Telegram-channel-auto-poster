@@ -398,6 +398,16 @@ pkill -f "main.py"
 **Times look wrong.**
 - Set your zone: `/timezone Asia/Kolkata` (use an IANA name). Check `/schedule` for the next post time.
 
+**`api.telegram.org` times out, but `t.me` opens normally.**
+- Some ISPs silently drop TLS connections whose server name (SNI) is `api.telegram.org`. This is not a Telegram outage.
+- Enable the bundled localhost relay in `.env` and restart the bot:
+  ```env
+  TELEGRAM_SNI_RELAY=true
+  ```
+  It listens on `127.0.0.1:8443`, is used only by the bot, and keeps normal certificate validation.
+- If you already have a VPN or proxy, set `TELEGRAM_PROXY=http://127.0.0.1:8080` (or a SOCKS5 URL) instead.
+- To test the relay alone: `.venv\Scripts\python.exe -m app.relay` — it should print `listening on 127.0.0.1:8443`.
+
 **Termux stops after a while.**
 - Disable battery optimization for Termux.
 - Keep the wake lock (the run script enables it).
@@ -422,6 +432,7 @@ pkill -f "main.py"
 │   ├── importer.py             # folder scanning + watcher loop
 │   ├── notify.py               # admin notifications
 │   ├── poster.py               # media delivery + scheduler
+│   ├── relay.py                # optional localhost SNI relay
 │   ├── utils.py                # schedule/caption/channel helpers
 │   └── views.py                # Telegram screens
 ├── tests/                      # pytest suite

@@ -18,6 +18,7 @@ from app.handlers import BOT_COMMANDS, register_handlers
 from app.importer import importer_loop, seed_folders_from_env
 from app.notify import notify_admins
 from app.poster import scheduler_loop
+from app.relay import start_relay_thread
 from app.utils import next_slot_utc, parse_schedule, safe_zoneinfo, to_iso
 
 log = logging.getLogger(__name__)
@@ -128,8 +129,21 @@ def main() -> None:
     config = Config.from_env()
     setup_logging(config.log_level)
 
-    db = Database(config.database_path)
-    app = (
+    proxy = config.telegram_proxy
+    if config.telegram_sni_relay:
+        if proxy:
+            log.warning(
+                "Both TELEGRAM_PROXY and TELEGRAM_SNI_RELAY are set; using the local relay."
+            )
+        start_relay_thread(
+            config.telegram_relay_host,
+            config.telegram_relay_port,
+            config.telegram_relay_upstream_host,
+            config.telegram_relay_upstream_port,
+        )
+        proxy = f"http://{config.telegram_relay_host}:{config.telegram_relay_port}"
+
+    builder = (
         Application.builder()
         .token(config.bot_token)
         .post_init(on_post_init)
@@ -137,8 +151,13 @@ def main() -> None:
         .read_timeout(60)
         .write_timeout(600)
         .connect_timeout(30)
-        .build()
     )
+    if proxy:
+        builder = builder.proxy(proxy).get_updates_proxy(proxy)
+        log.info("Using Telegram API proxy %s", proxy)
+
+    db = Database(config.database_path)
+    app = builder.build()
     app.bot_data["config"] = config
     app.bot_data["db"] = db
     app.bot_data["admin_ids"] = config.admin_ids
