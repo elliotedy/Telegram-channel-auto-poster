@@ -316,6 +316,16 @@ The bot escapes HTML automatically, so captions with `<`, `&`, etc. are safe.
 2. Copy `.env.example` to `.env` and fill in `TELEGRAM_BOT_TOKEN` and `ADMIN_IDS`.
 3. Double-click `start-windows.bat` to launch the bot.
 
+### Start automatically at login
+
+Press `Win+R`, type `shell:startup`, and press Enter. Create a shortcut to
+`start-windows.bat` in that folder (right-click → New → Shortcut). Set the
+shortcut to run **Minimized** so the console stays out of the way but can still
+be reopened from the taskbar.
+
+Only one copy may poll the bot token at a time. If you also run the bot on
+Termux or a VPS, stop the Windows copy first.
+
 ---
 
 ## Run on a VPS / Docker (alternative to Termux)
