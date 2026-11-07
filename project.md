@@ -143,28 +143,39 @@ It was built as inspiration / sibling to the local-media-first workflow of:
 ## 7. Deployment paths known
 
 - Termux: `setup-termux.sh`, `run-termux.sh`, `install-boot.sh`.
-- Windows: scripts still to create (`setup-windows.bat`, `start-windows.bat`).
+- Windows: `setup-windows.bat`, `start-windows.bat`.
 - Docker: `Dockerfile`, `docker-compose.yml`, `deploy/telegram-autoposter.service`, `Procfile`, `run.sh`.
 
-## 8. Optional Telegram userbot script — true channel creation
+## 8. Optional Telegram userbot setup — create the bot and channels
 
-- `tools/create_telegram_channels.py` — one-time Telethon userbot script that:
-  1. Logs in via a user account (interactive phone / code / 2FA flow).
-  2. Creates each channel from `CHANNELS`.
-  3. Sets the public username.
-  4. Adds the autoposter bot as admin with posting permission.
-- `requirements-userbot.txt` — optional dependency file (`telethon>=1.36`).
+- `tools/create_telegram_channels.py` — one-time Telethon userbot script that can:
+  1. Log in via a user account (interactive phone / code / 2FA flow).
+  2. Create a new bot by talking to **@BotFather**.
+  3. Save the new `TELEGRAM_BOT_TOKEN` and numeric `ADMIN_IDS` to `.env`.
+  4. Create each channel from `CHANNELS` (title, username, about, photo).
+  5. Add the autoposter bot as admin to existing channels in `ADD_BOT_TO`.
+  6. Register those channels in `data/autoposter.db` if it exists, or print
+     `/addchannel <chat_id>` commands.
+- `requirements-userbot.txt` — optional dependencies (`telethon>=1.36`, `python-dotenv`).
 
 Usage:
 
 ```bash
 pip install -r requirements-userbot.txt
-python tools/create_telegram_channels.py
+python tools/create_telegram_channels.py --create-bot
 ```
 
-Required env vars: `TG_API_ID`, `TG_API_HASH`, `TG_PHONE`, `TG_BOT_USERNAME`.
+Required env vars: `TG_API_ID`, `TG_API_HASH`. Optional: `TG_PHONE`,
+`BOT_NAME`, `TG_BOT_USERNAME`, `CREATE_BOT`, `WRITE_ENV`,
+`CREATE_CHANNELS`, `REGISTER_DB`.
 
-The normal `python-telegram-bot` cannot create channels; this userbot script is the optional true-creation path.
+`TG_BOT_USERNAME` must be 5–32 chars and end in `bot`. If the desired
+username is taken, the script retries with a random suffix.
+
+The normal `python-telegram-bot` cannot create bots or channels; this userbot
+script is the optional full-automation path. It requires the user's own
+Telegram login and must be run locally — an agent cannot complete the
+phone/code/2FA login.
 
 ## 9. Handoff checklist for the receiving agent
 
@@ -186,9 +197,10 @@ The normal `python-telegram-bot` cannot create channels; this userbot script is 
 7. Run the bot only with a valid `.env` and real bot token.
 8. Do not commit `.env`.
 
-## 9. Important notes / warnings
+## 10. Important notes / warnings
 
 - Bot must be admin in each target channel to post.
 - Local folders are machine-local; a running Termux process cannot read PC-only paths directly. Use synced folder / run on PC.
-- Telegram Bot API does **not** allow bots to create channels. The user must create channels and add the bot as admin. A semi-auto `/provision` design was proposed, and a one-time userbot script was proposed as an optional true-creation path, but not implemented yet.
-- User account access: not available to the receiving agent / should not be requested.
+- Telegram Bot API does **not** allow bots to create bots or channels. The userbot script automates @BotFather / channel creation through the user's own account.
+- User account access: not available to the receiving agent / should not be requested. The user must run the userbot script locally and enter their own phone/code/2FA.
+- Never commit `.env`, `TG_API_HASH`, or `data/userbot.session`.

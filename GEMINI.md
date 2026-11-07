@@ -185,7 +185,7 @@ Test files: `tests/test_database.py`, `tests/test_handlers_and_views.py`, `tests
 ## 13. Known Limitations / Gotchas
 
 - **GitHub Actions cannot run the bot** — it only runs lint/tests. The live bot must run on Termux/VPS/Docker.
-- **No userbot / channel creation** — Telegram Bot API cannot create channels. Users must create them manually and add the bot as admin.
+- **Bot/channel creation needs a userbot** — Telegram Bot API cannot create bots or channels. `tools/create_telegram_channels.py` is the optional one-time Telethon helper; it needs the user's own phone/code/2FA login and must be run locally.
 - **Local folders are machine-local** — Termux cannot read PC-only paths. Use Syncthing or run the bot on the same machine as the media.
 - **Private invite links (`t.me/+…`)** are not supported for `/addchannel` — use post links or numeric IDs.
-- **`/update` requires a `.git` folder** — not applicable if the project is not a git repo (it currently is not).
+- **`/update` requires a `.git` folder** — the project is now a Git repository; keep the remote configured if you want `/update` to work.

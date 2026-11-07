@@ -47,11 +47,54 @@ Telegram Bot API  ⇄  main.py ── scheduler every 30s ──► your channel
 
 ## 1. Create the bot and get your admin ID
 
+### Option A — automatic bot + channel setup (recommended)
+
+The setup script logs in as **your Telegram account**, talks to **@BotFather**, creates the bot for you, and can add it as admin to your channels.
+
+1. Get an **API ID** and **API hash**:
+   - Open <https://my.telegram.org>.
+   - Log in, open **API development tools**, and create an app.
+   - Copy `api_id` and `api_hash`.
+2. Add them to `.env` (create it from `.env.example` first):
+   ```dotenv
+   TG_API_ID=123456
+   TG_API_HASH=your_api_hash_here
+   TG_PHONE=+15551234567
+   BOT_NAME=Telegram Auto Poster
+   TG_BOT_USERNAME=my_autoposter_bot
+   ```
+   `TG_BOT_USERNAME` must end in `bot` (5–32 characters). If it is taken, the script tries a random suffix.
+3. Install the userbot dependency and run the setup:
+   ```bash
+   pip install -r requirements-userbot.txt
+   python tools/create_telegram_channels.py --create-bot
+   ```
+4. Telethon asks for the login code (and 2FA password if enabled). After that it:
+   - creates the bot through **@BotFather**;
+   - saves `TELEGRAM_BOT_TOKEN` and your numeric `ADMIN_IDS` into `.env`;
+   - adds the bot as administrator to the channels listed in `ADD_BOT_TO` inside the script;
+   - registers those channels in `data/autoposter.db` if the bot has already created it;
+   - prints the channel `chat_id` values. If the database did not exist yet, send `/addchannel <chat_id>` to the bot after it starts.
+5. Check `.env`, then continue with [Configure](#2-configure).
+
+> **Already created the bot manually?** Put its token in `.env` as
+> `TELEGRAM_BOT_TOKEN`, set `TG_BOT_USERNAME`, and run:
+> ```bash
+> python tools/create_telegram_channels.py --write-env
+> ```
+> This skips bot creation, saves your numeric `ADMIN_IDS`, adds the bot to the
+> channels in `ADD_BOT_TO`, and registers them if the database exists.
+
+> The script is a one-time helper for your own account. Automating @BotFather is not an official Bot API feature, so do not run it in a loop. Keep `.env`, your API hash, and `data/userbot.session` private — they are ignored by Git.
+
+### Option B — manual setup
+
 1. Open **[@BotFather](https://t.me/BotFather)** in Telegram.
 2. Send `/newbot`, choose a name and username. Copy the **token** (looks like `123456789:AA...`).
 3. Get your numeric Telegram user ID:
    - Send `/start` to **[@userinfobot](https://t.me/userinfobot)**, or
    - Start this bot after setup — it replies with your ID if you are not authorized yet.
+4. Create a channel, open **Administrators**, and add your bot with **Post messages** permission.
 
 You will also need a **channel** where you are an administrator.
 
@@ -76,6 +119,16 @@ Edit `.env`:
 | `LOG_LEVEL` | no | `INFO` by default |
 | `ENABLE_SELF_UPDATE` | no | Allows `/update` to `git pull` and restart |
 | `NOTIFY_STARTUP` | no | Send “bot online” message to admins on start |
+| `MEDIA_DIRS` | no | Watched local folders, separated by `;` or `,` |
+| `IMPORT_INTERVAL` | no | Seconds between folder scans, default `60` |
+| `IMPORT_MAX_PER_SCAN` | no | Maximum files imported per scan, default `25` |
+| `IMPORT_RECURSIVE` | no | Scan subfolders, default `true` |
+| `IMPORT_FILENAME_CAPTION` | no | Use the filename as the caption, default `false` |
+| `MAX_UPLOAD_MB` | no | Maximum local file size to upload, default `49` |
+
+> The `TG_API_ID`, `TG_API_HASH`, `TG_PHONE`, `BOT_NAME`, and
+> `TG_BOT_USERNAME` variables are only used by the one-time userbot setup in
+> section 1. The running bot does not need them.
 
 Example:
 
@@ -372,6 +425,9 @@ pkill -f "main.py"
 │   ├── utils.py                # schedule/caption/channel helpers
 │   └── views.py                # Telegram screens
 ├── tests/                      # pytest suite
+├── tools/
+│   └── create_telegram_channels.py  # userbot setup: bot + channels
+├── requirements-userbot.txt    # optional Telethon dependency
 ├── .github/workflows/ci.yml    # GitHub Actions lint + tests
 ├── deploy/telegram-autoposter.service
 ├── setup-windows.bat
@@ -390,6 +446,7 @@ pkill -f "main.py"
 
 - The bot is private: all control commands/callbacks are restricted to `ADMIN_IDS` in private chat.
 - Never commit `.env` or share the bot token. If it leaks, revoke it in BotFather (`/revoke`) and update `.env`.
+- The userbot setup uses your account's API ID/hash and creates `data/userbot.session`. Treat both like passwords; they are ignored by Git. Revoke the session from Telegram → **Devices** if it is ever exposed.
 - `/update` runs `git pull` as the user running the bot. Only use it with a repo you control.
 - Use a dedicated bot, not one that also handles sensitive chats.
 
