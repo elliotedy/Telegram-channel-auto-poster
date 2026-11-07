@@ -78,6 +78,7 @@ BOT_COMMANDS = [
     BotCommand("resume", "Resume scheduled posts"),
     BotCommand("backup", "Download a database backup"),
     BotCommand("update", "Pull updates from GitHub"),
+    BotCommand("termux", "Termux installation guide"),
     BotCommand("help", "Show help"),
     BotCommand("id", "Show your Telegram ID"),
 ]
@@ -290,6 +291,12 @@ async def cmd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 @admin_required
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text, markup = views.help_view()
+    await _reply(update, text, markup)
+
+
+@admin_required
+async def cmd_termux(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    text, markup = views.termux_help_view()
     await _reply(update, text, markup)
 
 
@@ -947,6 +954,9 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         elif data == "help":
             text, markup = views.help_view()
             await _safe_edit(query, text, markup)
+        elif data == "termux":
+            text, markup = views.termux_help_view()
+            await _safe_edit(query, text, markup)
         elif data == "noop":
             pass
         else:
@@ -1089,6 +1099,7 @@ def register_handlers(app: Application) -> None:
         "postnow": cmd_postnow,
         "backup": cmd_backup,
         "update": cmd_update,
+        "termux": cmd_termux,
     }
     for command, callback in admin_commands.items():
         app.add_handler(CommandHandler(command, callback))

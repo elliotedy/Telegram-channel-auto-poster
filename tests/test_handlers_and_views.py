@@ -103,6 +103,13 @@ def test_views(tmp_path) -> None:
         assert "/folders" in text
         assert "/scan" in text
         assert "/addmedia" in text
+        assert "/termux" in text
+
+        # Termux install guide
+        text, markup = views.termux_help_view()
+        assert "Termux" in text
+        assert "termux-setup-storage" in text
+        assert "/addfolder" in text
 
         # Add media help view and alias
         text, markup = views.add_media_help_view()

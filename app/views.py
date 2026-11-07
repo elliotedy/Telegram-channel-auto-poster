@@ -620,6 +620,53 @@ async def settings_view(db: Database, config: Config) -> tuple[str, InlineKeyboa
     return text, keyboard
 
 
+def termux_help_view() -> tuple[str, InlineKeyboardMarkup]:
+    text = (
+        "<b>📱 Install on Termux (Android)</b>\n\n"
+        "<b>1. Install apps</b>\n"
+        "Install <b>Termux</b> and <b>Termux:Boot</b> from F-Droid "
+        "(not the Play Store build).\n\n"
+        "<b>2. Install packages</b>\n"
+        "<code>pkg update -y &amp;&amp; pkg install -y python git</code>\n\n"
+        "<b>3. Get the code</b>\n"
+        "<code>git clone https://github.com/elliotedy/Telegram-channel-auto-poster.git</code>\n"
+        "<code>cd Telegram-channel-auto-poster</code>\n\n"
+        "<b>4. Install the bot</b>\n"
+        "<code>bash setup-termux.sh</code>\n\n"
+        "<b>5. Configure</b>\n"
+        "<code>nano .env</code>\n"
+        "Set <code>TELEGRAM_BOT_TOKEN</code> and <code>ADMIN_IDS</code>. "
+        "Save with Ctrl+O, Enter, then Ctrl+X.\n\n"
+        "<b>6. First test</b>\n"
+        "<code>python main.py</code>\n"
+        "Send /start to your bot, then press Ctrl+C.\n\n"
+        "<b>7. Run 24/7</b>\n"
+        "<code>bash run-termux.sh</code>\n"
+        "Or detach it:\n"
+        "<code>nohup bash run-termux.sh &gt;/dev/null 2&gt;&amp;1 &amp;</code>\n\n"
+        "<b>8. Auto-start after reboot</b>\n"
+        "<code>bash install-boot.sh</code>\n"
+        "Open Termux:Boot once and disable battery optimization for Termux.\n\n"
+        "<b>9. Telegram videos folder</b>\n"
+        "<code>termux-setup-storage</code>\n"
+        "Then send:\n"
+        "<code>/addfolder /storage/emulated/0/Android/media/org.telegram.messenger/Telegram/Telegram Video</code>\n\n"
+        "Use /update from Telegram to pull new code later."
+    )
+    markup = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "📖 Full guide",
+                    url="https://github.com/elliotedy/Telegram-channel-auto-poster#3-run-on-termux-android-247",
+                )
+            ],
+            [_back("help", "⬅️ Commands")],
+        ]
+    )
+    return text, markup
+
+
 def help_view() -> tuple[str, InlineKeyboardMarkup]:
     text = (
         "<b>ℹ️ Commands</b>\n\n"
@@ -644,6 +691,8 @@ def help_view() -> tuple[str, InlineKeyboardMarkup]:
         "/postnow — post the next media item immediately\n"
         "/pause — stop scheduled posting\n"
         "/resume — continue scheduled posting\n\n"
+        "<b>Setup</b>\n"
+        "/termux — install and run the bot on Android with Termux\n\n"
         "<b>Maintenance</b>\n"
         "/status — uptime and stats\n"
         "/caption — view or change the caption template\n"
@@ -654,7 +703,12 @@ def help_view() -> tuple[str, InlineKeyboardMarkup]:
         "At every scheduled time, the least-posted media item is sent to every active channel. "
         "If the bot was offline, it catches up with one post when it comes back online."
     )
-    return text, InlineKeyboardMarkup([[_back()]])
+    return text, InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("📱 Termux install guide", callback_data="termux")],
+            [_back()],
+        ]
+    )
 
 
 async def post_now_view(db: Database) -> tuple[str, InlineKeyboardMarkup]:

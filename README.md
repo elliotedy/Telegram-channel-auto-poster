@@ -144,6 +144,8 @@ TIMEZONE=Asia/Kolkata
 
 Use **Termux from F-Droid**, not the old Play Store build. Also install **Termux:Boot** from F-Droid if you want autostart.
 
+> You can also send **`/termux`** to the bot at any time to get this setup guide inside Telegram.
+
 ### Install
 
 ```bash
@@ -311,6 +313,7 @@ Default: **6 posts per day** at `08:00, 11:00, 14:00, 17:00, 20:00, 23:00` in yo
 | `/pause`, `/resume` | Pause/resume scheduled posting |
 | `/backup` | Download the SQLite database |
 | `/update` | `git pull` from GitHub and restart |
+| `/termux` | Full Termux installation guide inside Telegram |
 | `/help` | Help |
 | `/id` | Show your Telegram user/chat ID |
 
