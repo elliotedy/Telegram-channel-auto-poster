@@ -163,6 +163,30 @@ Press `Ctrl+C` after the test, then run it 24/7:
 bash run-termux.sh
 ```
 
+### Use Telegram's saved videos (Android)
+
+Grant Termux access to shared storage once:
+
+```bash
+termux-setup-storage
+```
+
+Then add Telegram's media folder. Either put it in `.env`:
+
+```env
+MEDIA_DIRS=/storage/emulated/0/Android/media/org.telegram.messenger/Telegram/Telegram Video
+```
+
+or send this command to the bot:
+
+```text
+/addfolder /storage/emulated/0/Android/media/org.telegram.messenger/Telegram/Telegram Video
+```
+
+The folder is watched continuously, and `/scan` imports existing files immediately. Make sure Telegram's **Settings → Data and Storage → Save to gallery → Videos** is enabled, otherwise that folder stays empty.
+
+This path exists only on Android. On Windows or a VPS, use a normal local path instead.
+
 For a detached background process:
 
 ```bash
@@ -371,7 +395,7 @@ git pull
 python -m pip install -r requirements.txt   # only if dependencies changed
 ```
 
-Or from Telegram: **`/update`** (requires a git clone and `ENABLE_SELF_UPDATE=true`). The bot pulls the latest code, then exits; the watchdog/Docker/systemd restarts it. If `requirements.txt` changed, run `bash setup-termux.sh` or the pip command afterwards.
+Or from Telegram: **`/update`** (requires a git clone and `ENABLE_SELF_UPDATE=true`). The bot pulls the latest code, then exits; the Windows launcher, watchdog, Docker, or systemd restarts it. If `requirements.txt` changed, run `bash setup-termux.sh` or the pip command afterwards.
 
 ---
 
