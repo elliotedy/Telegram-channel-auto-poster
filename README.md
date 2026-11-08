@@ -355,6 +355,28 @@ Termux or a VPS, stop the Windows copy first.
 
 ---
 
+## Android manager app
+
+A native Android app (Kotlin + Compose) is in `android/`. It manages channels,
+media, and schedule through the bot's local JSON API.
+
+1. Enable the API in `.env`:
+   ```env
+   API_ENABLED=true
+   API_KEY=choose-a-long-random-key
+   ```
+2. Restart the bot (API on port 8000).
+3. Build the app:
+   ```bash
+   cd android
+   ./gradlew assembleDebug
+   ```
+4. Install the APK, then in the app Settings enter `http://<bot-machine-IP>:8000` and the API key.
+
+See `android/README.md` for details.
+
+---
+
 ## Run on a VPS / Docker (alternative to Termux)
 
 ### Docker Compose
