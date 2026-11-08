@@ -109,6 +109,7 @@ def test_views(tmp_path) -> None:
         text, markup = views.termux_help_view()
         assert "Termux" in text
         assert ".venv/bin/python main.py" in text
+        assert "pip forbidden" in text
         assert "termux-setup-storage" in text
         assert "/addfolder" in text
 

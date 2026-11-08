@@ -451,6 +451,14 @@ pkill -f "main.py"
 - Install Termux:Boot and use `install-boot.sh`.
 - Check that Android didn’t restrict background data for Termux.
 
+**Termux says “Installing pip is forbidden”.**
+- You are still using an old setup script or the global pip. Pull the latest code first:
+  ```bash
+  git pull
+  bash setup-termux.sh
+  ```
+- The script creates `.venv` and uses `.venv/bin/python`. Never run `python -m pip install --upgrade pip` on Termux.
+
 **`/update` says “not a git repository”.**
 - Clone the project from GitHub instead of copying a ZIP, or update manually.
 

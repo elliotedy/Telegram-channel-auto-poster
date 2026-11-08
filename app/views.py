@@ -651,7 +651,10 @@ def termux_help_view() -> tuple[str, InlineKeyboardMarkup]:
         "<code>termux-setup-storage</code>\n"
         "Then send:\n"
         "<code>/addfolder /storage/emulated/0/Android/media/org.telegram.messenger/Telegram/Telegram Video</code>\n\n"
-        "Use /update from Telegram to pull new code later."
+        "Use /update from Telegram to pull new code later.\n\n"
+        "<b>pip forbidden error?</b>\n"
+        "Run <code>git pull</code> first, then <code>bash setup-termux.sh</code>. "
+        "Never use global pip on Termux; use <code>.venv/bin/python</code>."
     )
     markup = InlineKeyboardMarkup(
         [
