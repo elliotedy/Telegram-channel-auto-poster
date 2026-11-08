@@ -106,6 +106,10 @@ class Config:
     telegram_relay_port: int = 8443
     telegram_relay_upstream_host: str = "149.154.166.110"
     telegram_relay_upstream_port: int = 443
+    api_enabled: bool = False
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
+    api_key: str = ""
 
     @classmethod
     def from_env(cls) -> Config:
@@ -160,4 +164,8 @@ class Config:
             telegram_relay_port=_env_int("TELEGRAM_RELAY_PORT", 8443, 1, 65_535),
             telegram_relay_upstream_host=relay_upstream_host,
             telegram_relay_upstream_port=relay_upstream_port,
+            api_enabled=_env_bool("API_ENABLED", False),
+            api_host=(os.getenv("API_HOST") or "0.0.0.0").strip(),
+            api_port=_env_int("API_PORT", 8000, 1, 65_535),
+            api_key=(os.getenv("API_KEY") or "").strip(),
         )

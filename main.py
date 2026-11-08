@@ -11,6 +11,7 @@ from contextlib import suppress
 from telegram import Update
 from telegram.ext import Application
 
+from app.api import start_api_server
 from app.config import ROOT_DIR, Config
 from app.constants import DEFAULT_CAPTION_TEMPLATE, DEFAULT_SCHEDULE
 from app.database import Database
@@ -157,6 +158,13 @@ def main() -> None:
         log.info("Using Telegram API proxy %s", proxy)
 
     db = Database(config.database_path)
+    if config.api_enabled:
+        start_api_server(
+            config.database_path,
+            host=config.api_host,
+            port=config.api_port,
+            api_key=config.api_key,
+        )
     app = builder.build()
     app.bot_data["config"] = config
     app.bot_data["db"] = db
