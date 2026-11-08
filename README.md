@@ -156,7 +156,7 @@ cd telegram-autoposter
 
 bash setup-termux.sh
 nano .env          # add token and ADMIN_IDS
-python main.py     # first test: send /start to your bot
+.venv/bin/python main.py     # first test: send /start to your bot
 ```
 
 Press `Ctrl+C` after the test, then run it 24/7:
@@ -395,10 +395,10 @@ The service has `Restart=always`, so `/update` works there too.
 ```bash
 # on the phone / server
 git pull
-python -m pip install -r requirements.txt   # only if dependencies changed
+.venv/bin/python -m pip install -r requirements.txt   # only if dependencies changed
 ```
 
-Or from Telegram: **`/update`** (requires a git clone and `ENABLE_SELF_UPDATE=true`). The bot pulls the latest code, then exits; the Windows launcher, watchdog, Docker, or systemd restarts it. If `requirements.txt` changed, run `bash setup-termux.sh` or the pip command afterwards.
+Or from Telegram: **`/update`** (requires a git clone and `ENABLE_SELF_UPDATE=true`). The bot pulls the latest code, then exits; the Windows launcher, watchdog, Docker, or systemd restarts it. If `requirements.txt` changed on Termux, run `bash setup-termux.sh` or `.venv/bin/python -m pip install -r requirements.txt` afterwards.
 
 ---
 

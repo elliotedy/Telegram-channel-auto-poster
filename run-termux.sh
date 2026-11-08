@@ -31,7 +31,11 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] run-termux.sh started (PID $$)" >> logs/ter
 
 while true; do
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] starting bot…" >> logs/termux.log
-  python -u main.py >> logs/termux.log 2>&1
+  if [ -x .venv/bin/python ]; then
+    .venv/bin/python -u main.py >> logs/termux.log 2>&1
+  else
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] .venv not found, run bash setup-termux.sh first; retrying in 30 seconds" >> logs/termux.log
+  fi
   CODE=$?
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] bot exited with code $CODE; restarting in 10 seconds" >> logs/termux.log
   sleep 10

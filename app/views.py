@@ -638,7 +638,7 @@ def termux_help_view() -> tuple[str, InlineKeyboardMarkup]:
         "Set <code>TELEGRAM_BOT_TOKEN</code> and <code>ADMIN_IDS</code>. "
         "Save with Ctrl+O, Enter, then Ctrl+X.\n\n"
         "<b>6. First test</b>\n"
-        "<code>python main.py</code>\n"
+        "<code>.venv/bin/python main.py</code>\n"
         "Send /start to your bot, then press Ctrl+C.\n\n"
         "<b>7. Run 24/7</b>\n"
         "<code>bash run-termux.sh</code>\n"
