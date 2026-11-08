@@ -17,3 +17,11 @@ logs/
 .ruff_cache/
 .mypy_cache/
 .DS_Store
+
+# Android build outputs and signing secrets
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.jks
+*.keystore
