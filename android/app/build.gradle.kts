@@ -33,7 +33,13 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // Use release signing when env vars are present, otherwise fall back
+            // to the debug key so CI builds still produce an installable APK.
+            signingConfig = if (System.getenv("RELEASE_STORE_FILE").isNullOrBlank()) {
+                signingConfigs.getByName("debug")
+            } else {
+                signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
         }
     }

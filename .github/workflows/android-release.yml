@@ -1,0 +1,62 @@
+name: Android release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: "8.7"
+
+      - name: Build release APK
+        run: gradle :app:assembleRelease --stacktrace
+
+      - name: Rename APK
+        run: |
+          mkdir -p ../dist
+          cp app/build/outputs/apk/release/app-release.apk ../dist/autoposter-android.apk
+          ls -lh ../dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoposter-android
+          path: dist/autoposter-android.apk
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/autoposter-android.apk
+          name: "Auto Poster Android ${{ github.ref_name }}"
+          body: |
+            Android manager app for the Telegram Auto Poster bot.
+
+            Install the APK, then in the app Settings enter:
+            - API URL: `http://<bot-machine-IP>:8000`
+            - The `API_KEY` from the bot's `.env`
