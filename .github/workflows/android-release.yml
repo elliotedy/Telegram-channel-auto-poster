@@ -26,7 +26,10 @@ jobs:
           java-version: "17"
 
       - name: Install Android 34 platform
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
           yes | sdkmanager --licenses || true
           sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
@@ -36,6 +39,8 @@ jobs:
           gradle-version: "8.7"
 
       - name: Build release APK
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
         run: gradle :app:assembleRelease --stacktrace
 
       - name: Rename APK
