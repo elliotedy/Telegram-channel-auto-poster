@@ -207,7 +207,7 @@ fun ManagerApp(modifier: Modifier = Modifier) {
                                                         baseUrl,
                                                         "/api/channels/${c.optLong("chat_id")}/toggle",
                                                         apiKey,
-                                                        JSONObject().put("active", !c.optInt("active", 1).toBoolean()),
+                                                        JSONObject().put("active", c.optInt("active", 1) != 1),
                                                     )
                                                     refresh()
                                                 } catch (e: Exception) { error = e.message }
