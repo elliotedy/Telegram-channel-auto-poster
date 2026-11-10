@@ -9,6 +9,7 @@ from pathlib import Path
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
+from .captions import get_pool
 from .config import Config
 from .constants import (
     DEFAULT_CAPTION_TEMPLATE,
@@ -570,6 +571,7 @@ async def settings_view(db: Database, config: Config) -> tuple[str, InlineKeyboa
     tz = safe_zoneinfo(await db.get_setting("timezone"))
     notify_posts = await db.get_bool("notify_posts")
     template = await db.get_setting("caption_template") or DEFAULT_CAPTION_TEMPLATE
+    pool = await get_pool(db)
     folders = await db.list_folders()
     import_enabled = await db.get_bool("import_enabled", True)
     filename_caption = await db.get_bool(
@@ -590,9 +592,12 @@ async def settings_view(db: Database, config: Config) -> tuple[str, InlineKeyboa
         f"Local upload limit: <b>{config.max_upload_mb:g} MB</b>\n\n"
         "<b>📝 Caption template</b>\n"
         f"<code>{html.escape(template)}</code>\n\n"
-        "Variables: <code>{caption}</code> <code>{channel}</code> <code>{date}</code>\n"
-        "Change it with:\n"
-        "<code>/caption {caption}\\n\\n@mychannel</code>\n"
+        f"🎲 Rotating captions: <b>{len(pool)}</b>\n"
+        "Variables: <code>{random_caption}</code> <code>{caption}</code> "
+        "<code>{channel}</code> <code>{date}</code>\n"
+        "Change the template with:\n"
+        "<code>/caption {caption}\\n\\n{random_caption}</code>\n"
+        "Manage the pool with /captions, /addcaption and /delcaption.\n"
         "Use <code>\\n</code> for a new line, or <code>/caption reset</code>."
     )
     toggle_label = "🔕 Notifications: Off" if notify_posts else "🔔 Notifications: On"
@@ -694,11 +699,15 @@ def help_view() -> tuple[str, InlineKeyboardMarkup]:
         "/postnow — post the next media item immediately\n"
         "/pause — stop scheduled posting\n"
         "/resume — continue scheduled posting\n\n"
+        "<b>Captions</b>\n"
+        "/caption — view or change the caption template\n"
+        "/captions — view the rotating caption pool\n"
+        "/addcaption &lt;text&gt; — add a caption to the rotation\n"
+        "/delcaption &lt;number&gt; — remove one caption\n\n"
         "<b>Setup</b>\n"
         "/termux — install and run the bot on Android with Termux\n\n"
         "<b>Maintenance</b>\n"
         "/status — uptime and stats\n"
-        "/caption — view or change the caption template\n"
         "/backup — download the SQLite database\n"
         "/update — git pull the latest code from GitHub\n"
         "/id — show your Telegram ID\n\n"

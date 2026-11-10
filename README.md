@@ -13,7 +13,7 @@ Built for **Termux on Android** and **GitHub**, and it also runs on any Linux VP
 - **Control panel inside Telegram** — channels, videos, schedule, pause/resume, manual posting, stats.
 - **No video downloads** — the bot stores Telegram `file_id`s, so the files stay in Telegram's cloud and posting is instant. No storage used on your phone.
 - **Smart rotation** — least-posted video goes next, so nothing is repeated before everything has had airtime.
-- **Per-video captions + caption templates** — mix stored captions with `{channel}`, `{date}`, or your own signature.
+- **Per-video captions + rotating promos** — each post gets a random caption from an editable pool, and templates can mix in `{caption}`, `{channel}`, and `{date}`.
 - **Timezone aware** — set once with `/timezone Asia/Kolkata`; daylight saving is handled.
 - **Offline catch-up** — if the bot was stopped, it posts at most one catch-up video when it comes back, instead of a spam burst.
 - **Pause / resume** — stop everything instantly without losing the schedule.
@@ -309,6 +309,9 @@ Default: **6 posts per day** at `08:00, 11:00, 14:00, 17:00, 20:00, 23:00` in yo
 | `/settimes HH:MM ...` | Set custom daily times |
 | `/timezone <IANA>` | Set timezone, e.g. `Europe/London` |
 | `/caption` | Show/change the caption template |
+| `/captions` | View the rotating caption pool |
+| `/addcaption <text>` | Add a caption to the rotation |
+| `/delcaption <number>` | Remove a rotating caption |
 | `/postnow` | Post immediately |
 | `/pause`, `/resume` | Pause/resume scheduled posting |
 | `/backup` | Download the SQLite database |
@@ -317,23 +320,32 @@ Default: **6 posts per day** at `08:00, 11:00, 14:00, 17:00, 20:00, 23:00` in yo
 | `/help` | Help |
 | `/id` | Show your Telegram user/chat ID |
 
-### Caption templates
+### Caption templates and the rotating pool
 
-Set with `/caption`:
+Every post gets one caption chosen at random from the pool (5 promo captions
+are included by default). Manage the pool with `/captions`, `/addcaption`, and
+`/delcaption`; entries support Telegram HTML such as `<b>`, `<i>`, and
+`<a href="…">`.
+
+Set the template with `/caption`:
 
 ```text
-/caption {caption}\n\n@mychannel
-/caption {caption}\n\n{channel} • {date}
+/caption {random_caption}
+/caption {caption}\n\n{random_caption}
+/caption {random_caption}\n\n{channel} • {date}
 ```
 
 Variables:
 
+- `{random_caption}` — a random entry from the caption pool
 - `{caption}` — caption stored with the video
 - `{channel}` — channel title
 - `{date}` — local post date/time
 - Use `\n` for a new line
 
-The bot escapes HTML automatically, so captions with `<`, `&`, etc. are safe.
+The default template is `{random_caption}`. Template text, media captions, and
+channel titles are HTML-escaped automatically, so characters like `<` and `&`
+are safe; only pool entries are treated as HTML.
 
 ---
 

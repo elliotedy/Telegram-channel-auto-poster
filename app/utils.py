@@ -146,40 +146,74 @@ def shorten(text: str | None, limit: int = 40) -> str:
     return cleaned[: max(1, limit - 1)].rstrip() + "…"
 
 
+_CAPTION_TOKEN_RE = re.compile(r"\{(caption|channel|date|random_caption)\}")
+_HTML_TAG_RE = re.compile(r"<(/?)([a-zA-Z][a-zA-Z0-9]*)([^>]*)>")
+
+
+def _close_open_tags(text: str) -> str:
+    """Append closing tags for anything left open by truncation."""
+    stack: list[str] = []
+    for match in _HTML_TAG_RE.finditer(text):
+        closing, name, attrs = match.group(1), match.group(2).lower(), match.group(3)
+        if name == "br" or attrs.rstrip().endswith("/"):
+            continue
+        if not closing:
+            stack.append(name)
+            continue
+        while stack:
+            if stack.pop() == name:
+                break
+    return text + "".join(f"</{name}>" for name in reversed(stack))
+
+
+def _truncate_caption(text: str, limit: int = MAX_CAPTION_LENGTH) -> str:
+    """Trim HTML caption text without cutting a tag or entity in half."""
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    last_open = cut.rfind("<")
+    if last_open > cut.rfind(">"):
+        cut = cut[:last_open]
+    last_amp = cut.rfind("&")
+    if last_amp > cut.rfind(";") and limit - last_amp < 10:
+        cut = cut[:last_amp]
+    return _close_open_tags(cut.rstrip())
+
+
 def build_caption(
     template: str | None,
     video_caption: str | None,
     channel_title: str | None,
     when_local: datetime,
+    random_caption: str | None = None,
 ) -> str:
-    """Fill the caption template and escape it for Telegram HTML mode."""
-    text = template if template is not None else "{caption}"
-    text = text.replace("{caption}", (video_caption or "").strip())
-    text = text.replace("{channel}", (channel_title or "").strip())
-    text = text.replace("{date}", when_local.strftime("%d %b %Y, %H:%M"))
+    """Fill the caption template and escape it for Telegram HTML mode.
+
+    Template text, media captions and channel titles are escaped so they are
+    always shown literally. ``{random_caption}`` is replaced with an
+    admin-authored pool entry that may contain Telegram HTML.
+    """
+    source = template if template is not None else "{caption}"
+    values = {
+        "caption": html.escape((video_caption or "").strip(), quote=False),
+        "channel": html.escape((channel_title or "").strip(), quote=False),
+        "date": html.escape(when_local.strftime("%d %b %Y, %H:%M"), quote=False),
+        "random_caption": (random_caption or "").strip(),
+    }
+
+    parts = _CAPTION_TOKEN_RE.split(source)
+    rendered: list[str] = []
+    for index, part in enumerate(parts):
+        if index % 2 == 0:
+            rendered.append(html.escape(part, quote=False))
+        else:
+            rendered.append(values[part])
+    text = "".join(rendered)
 
     cleaned = "\n".join(line.rstrip() for line in text.splitlines()).strip()
     if not cleaned:
         return ""
-
-    escaped = html.escape(cleaned, quote=False)
-    # Telegram allows 1024 characters in a media caption. Trim the raw text
-    # so that the escaped result fits within MAX_CAPTION_LENGTH.
-    if len(escaped) <= MAX_CAPTION_LENGTH:
-        return escaped
-
-    low, high = 0, min(len(cleaned), MAX_CAPTION_LENGTH)
-    best = ""
-    while low <= high:
-        mid = (low + high) // 2
-        cand_raw = cleaned[:mid].rstrip()
-        cand_esc = html.escape(cand_raw, quote=False)
-        if len(cand_esc) <= MAX_CAPTION_LENGTH:
-            best = cand_esc
-            low = mid + 1
-        else:
-            high = mid - 1
-    return best
+    return _truncate_caption(cleaned)
 
 
 def parse_channel_target(raw: str) -> int | str | None:

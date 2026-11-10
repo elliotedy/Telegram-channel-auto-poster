@@ -232,7 +232,7 @@ def api_get_settings(db_path: Path) -> dict:
             "schedule_times": await db.get_setting("schedule_times", ""),
             "timezone": await db.get_setting("timezone", "UTC"),
             "paused": await db.get_bool("paused"),
-            "caption_template": await db.get_setting("caption_template", "{caption}"),
+            "caption_template": await db.get_setting("caption_template", "{random_caption}"),
         }
 
     return _run(db_path, op)

@@ -27,6 +27,13 @@ from telegram.ext import (
 )
 
 from . import views
+from .captions import (
+    DEFAULT_CAPTIONS,
+    MAX_CAPTION_LENGTH,
+    MAX_CAPTIONS,
+    get_pool,
+    save_pool,
+)
 from .config import ROOT_DIR, Config
 from .constants import DEFAULT_CAPTION_TEMPLATE, DEFAULT_SCHEDULE, SCHEDULE_PRESETS
 from .database import Database
@@ -73,6 +80,9 @@ BOT_COMMANDS = [
     BotCommand("settimes", "Set daily posting times"),
     BotCommand("timezone", "Set the bot timezone"),
     BotCommand("caption", "Set the caption template"),
+    BotCommand("captions", "View the rotating caption pool"),
+    BotCommand("addcaption", "Add a rotating caption"),
+    BotCommand("delcaption", "Remove a rotating caption"),
     BotCommand("postnow", "Post media immediately"),
     BotCommand("pause", "Pause scheduled posts"),
     BotCommand("resume", "Resume scheduled posts"),
@@ -640,16 +650,23 @@ async def cmd_caption(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             update,
             "<b>📝 Caption template</b>\n\n"
             f"Current:\n<code>{html.escape(template)}</code>\n\n"
-            "Variables: <code>{caption}</code> (caption stored with the video), "
+            "Variables: <code>{random_caption}</code> (rotating caption), "
+            "<code>{caption}</code> (caption stored with the video), "
             "<code>{channel}</code>, <code>{date}</code>.\n\n"
-            "Example:\n<code>/caption {caption}\\n\\n@mychannel</code>\n\n"
-            "Use <code>\\n</code> for a new line. Reset with <code>/caption reset</code>.",
+            "Examples:\n"
+            "<code>/caption {random_caption}</code>\n"
+            "<code>/caption {caption}\\n\\n{random_caption}</code>\n\n"
+            "Use <code>\\n</code> for a new line. Reset with <code>/caption reset</code>.\n"
+            "Manage the rotating captions with /captions.",
         )
         return
 
     if raw.lower() in {"reset", "default"}:
         await db.set_setting("caption_template", DEFAULT_CAPTION_TEMPLATE)
-        await _reply(update, "✅ Caption template reset to <code>{caption}</code>.")
+        await _reply(
+            update,
+            f"✅ Caption template reset to <code>{html.escape(DEFAULT_CAPTION_TEMPLATE)}</code>.",
+        )
         return
 
     template = raw.replace("\\n", "\n")
@@ -664,6 +681,99 @@ async def cmd_caption(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         f"<code>{html.escape(template)}</code>\n\n"
         "It will be used for the next post.",
     )
+
+
+@admin_required
+async def cmd_captions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    pool = await get_pool(_db(context))
+    header = (
+        f"<b>🎲 Rotating captions</b> — {len(pool)} in the pool\n\n"
+        "One caption is picked at random for every post. "
+        "Add with /addcaption, remove with /delcaption."
+    )
+    chunks: list[str] = []
+    current = header
+    for index, caption in enumerate(pool, 1):
+        block = f"\n\n<b>#{index}</b>\n{caption}"
+        if len(current) + len(block) > 3500 and current:
+            chunks.append(current)
+            current = f"<b>🎲 Captions (continued)</b>{block}"
+        else:
+            current += block
+    chunks.append(current)
+
+    for chunk in chunks:
+        try:
+            await _reply(update, chunk)
+        except BadRequest:
+            # A caption may contain text Telegram cannot parse as HTML.
+            await _reply(update, html.escape(chunk))
+
+
+@admin_required
+async def cmd_addcaption(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    raw = _message_text_after_command(update).replace("\\n", "\n").strip()
+    if not raw:
+        await _reply(
+            update,
+            "⚠️ Usage:\n<code>/addcaption Your caption text</code>\n\n"
+            "HTML is allowed, for example "
+            '<code>&lt;b&gt;Bold&lt;/b&gt;</code> or '
+            '<code>&lt;a href="https://t.me/mychannel"&gt;Join&lt;/a&gt;</code>.',
+        )
+        return
+    if len(raw) > MAX_CAPTION_LENGTH:
+        await _reply(
+            update,
+            f"⚠️ Captions must be under {MAX_CAPTION_LENGTH} characters.",
+        )
+        return
+
+    db = _db(context)
+    pool = await get_pool(db)
+    if len(pool) >= MAX_CAPTIONS:
+        await _reply(
+            update,
+            f"⚠️ The pool already has {MAX_CAPTIONS} captions. "
+            "Remove one with /delcaption first.",
+        )
+        return
+
+    pool.append(raw)
+    await save_pool(db, pool)
+    await _reply(
+        update,
+        f"✅ Caption added. The pool now has <b>{len(pool)}</b> captions.\n"
+        "Use /captions to review them.",
+    )
+
+
+@admin_required
+async def cmd_delcaption(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    db = _db(context)
+    raw = _message_text_after_command(update)
+    index = _parse_int(raw)
+    if index is None:
+        await _reply(update, "⚠️ Usage: <code>/delcaption 2</code> — see /captions for numbers.")
+        return
+
+    pool = await get_pool(db)
+    if not 1 <= index <= len(pool):
+        await _reply(update, f"⚠️ Pick a number between 1 and {len(pool)}.")
+        return
+
+    pool.pop(index - 1)
+    if not pool:
+        pool = list(DEFAULT_CAPTIONS)
+        await save_pool(db, pool)
+        await _reply(
+            update,
+            "🗑 Caption deleted. The pool was empty, so the default captions were restored.",
+        )
+        return
+
+    await save_pool(db, pool)
+    await _reply(update, f"🗑 Caption #{index} deleted. <b>{len(pool)}</b> captions remain.")
 
 
 @admin_required
@@ -1094,6 +1204,9 @@ def register_handlers(app: Application) -> None:
         "settimes": cmd_settimes,
         "timezone": cmd_timezone,
         "caption": cmd_caption,
+        "captions": cmd_captions,
+        "addcaption": cmd_addcaption,
+        "delcaption": cmd_delcaption,
         "pause": cmd_pause,
         "resume": cmd_resume,
         "postnow": cmd_postnow,

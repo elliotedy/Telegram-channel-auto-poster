@@ -69,6 +69,34 @@ def test_build_caption_can_return_empty() -> None:
     assert build_caption("{caption}", None, "channel", datetime.now(UTC)) == ""
 
 
+def test_build_caption_inserts_pool_html_but_escapes_other_values() -> None:
+    caption = build_caption(
+        "{caption}\n\n{random_caption}\n{channel}",
+        "Fish <b>fry</b> & chips",
+        "My <Channel>",
+        datetime.now(UTC),
+        '<b>Join</b> <a href="https://t.me/example">now</a>',
+    )
+    assert "Fish &lt;b&gt;fry&lt;/b&gt; &amp; chips" in caption
+    assert "My &lt;Channel&gt;" in caption
+    assert '<b>Join</b> <a href="https://t.me/example">now</a>' in caption
+
+
+def test_build_caption_escapes_html_in_the_template_itself() -> None:
+    caption = build_caption("Price < 500 & rising", None, None, datetime.now(UTC))
+    assert caption == "Price &lt; 500 &amp; rising"
+
+
+def test_build_caption_trims_without_breaking_html() -> None:
+    pool_caption = '<a href="https://t.me/example">' + "x" * 2000 + "</a>"
+    caption = build_caption("{random_caption}", None, None, datetime.now(UTC), pool_caption)
+    assert caption.startswith('<a href="https://t.me/example">')
+    assert caption.endswith("</a>")
+    assert caption.count("<a ") == 1
+    visible = caption[: caption.rindex("</a>")].split(">", 1)[1]
+    assert 0 < len(visible) <= 1024
+
+
 @pytest.mark.parametrize(
     ("raw", "expected"),
     [

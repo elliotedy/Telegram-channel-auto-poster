@@ -12,6 +12,7 @@ from telegram import Update
 from telegram.ext import Application
 
 from app.api import start_api_server
+from app.captions import DEFAULT_CAPTIONS, dump_pool
 from app.config import ROOT_DIR, Config
 from app.constants import DEFAULT_CAPTION_TEMPLATE, DEFAULT_SCHEDULE
 from app.database import Database
@@ -56,6 +57,16 @@ def setup_logging(level_name: str) -> None:
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
+async def _upgrade_caption_settings(db: Database) -> None:
+    """One-time switch from media-only captions to the rotating caption pool."""
+    if await db.get_bool("captions_migrated"):
+        return
+    template = await db.get_setting("caption_template")
+    if template in (None, "", "{caption}"):
+        await db.set_setting("caption_template", DEFAULT_CAPTION_TEMPLATE)
+    await db.set_bool("captions_migrated", True)
+
+
 async def on_post_init(app: Application) -> None:
     config: Config = app.bot_data["config"]
     db: Database = app.bot_data["db"]
@@ -66,12 +77,15 @@ async def on_post_init(app: Application) -> None:
             "schedule_times": DEFAULT_SCHEDULE,
             "timezone": config.default_timezone,
             "caption_template": DEFAULT_CAPTION_TEMPLATE,
+            "caption_pool": dump_pool(DEFAULT_CAPTIONS),
+            "captions_migrated": "0",
             "paused": "0",
             "notify_posts": "0",
             "import_enabled": "1",
             "import_filename_caption": "1" if config.import_filename_caption else "0",
         }
     )
+    await _upgrade_caption_settings(db)
     await seed_folders_from_env(db, config)
 
     times = parse_schedule(await db.get_setting("schedule_times"))

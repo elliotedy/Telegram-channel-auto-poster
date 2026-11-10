@@ -15,6 +15,7 @@ from telegram.constants import ParseMode
 from telegram.error import BadRequest, Forbidden, NetworkError, RetryAfter, TelegramError
 from telegram.ext import Application
 
+from .captions import get_pool, pick_caption
 from .config import Config
 from .database import Database
 from .notify import notify_admins
@@ -200,6 +201,7 @@ class Poster:
             media["caption"],
             channel["title"],
             moment.astimezone(tz),
+            pick_caption(await get_pool(self.db)),
         )
         message = await send_media(
             self.bot,

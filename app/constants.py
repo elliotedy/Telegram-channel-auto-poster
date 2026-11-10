@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DEFAULT_SCHEDULE = "08:00,11:00,14:00,17:00,20:00,23:00"
-DEFAULT_CAPTION_TEMPLATE = "{caption}"
+DEFAULT_CAPTION_TEMPLATE = "{random_caption}"
 
 SCHEDULE_PRESETS: dict[str, tuple[str, str]] = {
     # key: (button label, comma separated times)
